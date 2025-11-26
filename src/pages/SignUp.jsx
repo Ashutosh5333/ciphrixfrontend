@@ -80,38 +80,3 @@ export default function SignUp() {
     </div>
   );
 }
-
-// import React, { useState } from 'react';
-// import axios from '../api/axios';
-// import { useNavigate } from 'react-router-dom';
-
-// export default function SignUp() {
-//   const [form, setForm] = useState({ name: '', email: '', password: '' });
-//   const [loading, setLoading] = useState(false);
-//   const navigate = useNavigate();
-
-//   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-//   const submit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     try {
-//       await axios.post('/auth/signup', form);
-//       navigate('/signin');
-//     } catch (err) {
-//       alert(err?.response?.data?.message || 'Sign up failed');
-//     } finally { setLoading(false); }
-//   };
-
-//   return (
-//     <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded p-6 shadow">
-//       <h2 className="text-xl font-semibold mb-4">Sign Up</h2>
-//       <form onSubmit={submit} className="space-y-3">
-//         <input name="name" value={form.name} onChange={handle} placeholder="Name" className="w-full px-3 py-2 border rounded bg-transparent" />
-//         <input name="email" value={form.email} onChange={handle} placeholder="Email" type="email" className="w-full px-3 py-2 border rounded bg-transparent" />
-//         <input name="password" value={form.password} onChange={handle} placeholder="Password" type="password" className="w-full px-3 py-2 border rounded bg-transparent" />
-//         <button disabled={loading} className="w-full py-2 bg-blue-600 text-white rounded">{loading ? 'Creating...' : 'Create account'}</button>
-//       </form>
-//     </div>
-//   );
-// }
