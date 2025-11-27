@@ -30,6 +30,7 @@ export default function Dashboard() {
     setConfirmOpen(false);
     try {
       await dispatch(deleteTask(toDelete)).unwrap();
+      dispatch(fetchTasks({ page }));
       setToast("Task deleted");
     } catch (err) {
       setToast(err || "Delete failed");
