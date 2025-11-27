@@ -12,7 +12,7 @@ export default function Toast({ message, type = "error", clear }) {
 
   return (
     <div
-      className={`fixed bottom-6 right-6 px-4 py-2 rounded shadow text-white 
+      className={`fixed top-12 right-1 px-4 py-2 rounded shadow text-white 
       ${type === "error" ? "bg-red-600" : "bg-green-600"}
       `}
     >

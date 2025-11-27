@@ -1,55 +1,39 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api/axios";
-import { useAuth } from "../contexts/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTasks, deleteTask } from "../features/tasks/taskSlice";
 import TaskCard from "../components/TaskCard";
 import Pagination from "../components/Pagination";
 import Skeleton from "../components/Skeleton";
-import Toast from "../components/Toast";
 import Modal from "../components/Modal";
+import Toast from "../components/Toast";
+import TaskModal from "../components/TaskModal";
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState([]);
-  const [pagination, setPagination] = useState(null);
+  const dispatch = useDispatch();
+  const { list, pagination, loading } = useSelector((s) => s.tasks);
+  const auth = useSelector((s) => s.auth);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
-  const fetchTasks = async (p = 1) => {
-    setLoading(true);
-    try {
-      const res = await axios.get("/tasks", { params: { page: p, limit: 6 } });
-      setTasks(res.data.tasks);
-      setPagination(res.data.pagination);
-      setPage(p);
-    } catch (err) {
-      console.error(err);
-      setToast("Could not fetch tasks");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchTasks(1);
-  }, []);
+    dispatch(fetchTasks({ page }));
+  }, [dispatch, page]);
 
   const requestDelete = (id) => {
     setToDelete(id);
     setConfirmOpen(true);
   };
+
   const doDelete = async () => {
+    setConfirmOpen(false);
     try {
-      await axios.delete(`/tasks/${toDelete}`);
-      setTasks((t) => t.filter((tk) => tk._id !== toDelete));
+      await dispatch(deleteTask(toDelete)).unwrap();
       setToast("Task deleted");
     } catch (err) {
-      console.error(err);
-      setToast(err?.response?.data?.message || "Delete failed");
+      setToast(err || "Delete failed");
     } finally {
-      setConfirmOpen(false);
       setToDelete(null);
       setTimeout(() => setToast(""), 2500);
     }
@@ -60,13 +44,15 @@ export default function Dashboard() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">Tasks</h1>
         <div>
-          <span className="text-sm text-gray-500">Role: {user.role}</span>
+          <span className="text-sm text-gray-500">
+            Role: {auth.user?.role || "guest"}
+          </span>
         </div>
       </div>
 
       {loading ? (
         <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="p-4 bg-white dark:bg-gray-800 rounded">
               <Skeleton className="h-6 w-1/3 mb-2" />
               <Skeleton className="h-4 w-full mb-2" />
@@ -77,21 +63,21 @@ export default function Dashboard() {
       ) : (
         <>
           <div className="grid gap-4">
-            {tasks.length === 0 ? (
+            {list.length === 0 ? (
               <div className="text-center py-8">No tasks found.</div>
             ) : (
-              tasks.map((task) => (
+              list.map((task) => (
                 <TaskCard
                   key={task._id}
                   task={task}
                   onDelete={requestDelete}
-                  showDelete={user.role === "admin"}
+                  showDelete={auth.user?.role === "admin"}
                 />
               ))
             )}
           </div>
 
-          <Pagination pagination={pagination} onChange={fetchTasks} />
+          <Pagination pagination={pagination} onChange={(p) => setPage(p)} />
         </>
       )}
 
@@ -122,7 +108,9 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      <Toast message={toast} />
+      <Toast message={toast} clear={() => setToast("")} />
+
+      <TaskModal />
     </div>
   );
 }
