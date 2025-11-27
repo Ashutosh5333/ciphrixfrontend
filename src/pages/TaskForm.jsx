@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createTask,
@@ -6,20 +6,21 @@ import {
   fetchTaskById,
   clearCurrentTask,
 } from "../features/tasks/taskSlice";
-import { useNavigate, useParams } from "react-router-dom";
-import TaskTitleInput from "../components/task/TaskTitleInput";
-import TaskDescriptionInput from "../components/task/TaskDescriptionInput";
-import TaskStatusSelector from "../components/task/TaskStatusSelector";
-import TaskFormActions from "../components/task/TaskFormActions";
-import Toast from "../components/Toast";
 import { closeTaskModal } from "../features/ui/uiSlice";
 
+import Card from "../components/ui/Card";
+import TextInput from "../components/ui/TextInput";
+import TextArea from "../components/ui/TextArea";
+import StatusSelector from "../components/ui/StatusSelector";
+import Button from "../components/Button";
+import Toast from "../components/Toast";
+
 export default function TaskForm() {
-  const { editTaskId } = useSelector((s) => s.ui);
-  const isEdit = Boolean(editTaskId);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { currentTask, loading } = useSelector((s) => s.tasks);
+  const { editTaskId } = useSelector((s) => s.ui);
+
+  const isEdit = Boolean(editTaskId);
 
   const [form, setForm] = useState({
     title: "",
@@ -58,89 +59,84 @@ export default function TaskForm() {
       )
       .catch(() => setToast("Failed to load task"))
       .finally(() => setFetching(false));
-  }, [dispatch, editTaskId, isEdit, currentTask]);
+  }, [dispatch, isEdit, editTaskId, currentTask]);
 
-  const validate = useCallback(() => {
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const validate = () => {
     const e = {};
     if (!form.title.trim()) e.title = "Title is required";
     if (!form.description.trim()) e.description = "Description is required";
     return e;
-  }, [form]);
+  };
 
-  const onChange = useCallback(
-    (e) => setForm({ ...form, [e.target.name]: e.target.value }),
-    [form]
-  );
+  const submit = async (e) => {
+    e.preventDefault();
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
 
-  const submit = useCallback(
-    async (e) => {
-      e.preventDefault();
-
-      const errs = validate();
-      setErrors(errs);
-      if (Object.keys(errs).length > 0) return;
-
-      try {
-        if (isEdit) {
-          await dispatch(updateTask({ editTaskId, ...form })).unwrap();
-          setToast("Task updated");
-        } else {
-          await dispatch(createTask(form)).unwrap();
-          setToast("Task created");
-        }
-
-        dispatch(closeTaskModal());
-      } catch (err) {
-        setToast(err || "Save failed");
+    try {
+      if (isEdit) {
+        await dispatch(updateTask({ editTaskId, ...form })).unwrap();
+        setToast("Task updated");
+      } else {
+        await dispatch(createTask(form)).unwrap();
+        setToast("Task created");
       }
-    },
-    [form, isEdit, editTaskId, validate, dispatch, navigate]
-  );
-
-  const titleSection = useMemo(
-    () => (
-      <h2 className="text-3xl font-bold mb-7">
-        {isEdit ? "Edit Task" : "Add New Task"}
-      </h2>
-    ),
-    [isEdit]
-  );
+      dispatch(closeTaskModal());
+    } catch (err) {
+      setToast(err || "Save failed");
+    }
+  };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <div className="p-8 rounded-3xl shadow-xl border bg-white/80 dark:bg-gray-800/60 backdrop-blur-xl">
-        {titleSection}
+    <Card>
+      <h2 className="text-3xl font-bold mb-7 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        {isEdit ? "Edit Task" : "Create Task"}
+      </h2>
 
-        <form onSubmit={submit} className="space-y-6">
-          <TaskTitleInput
-            value={form.title}
-            onChange={onChange}
-            error={errors.title}
-            disabled={fetching}
-          />
+      <form onSubmit={submit} className="space-y-6">
+        <TextInput
+          label="Title"
+          name="title"
+          value={form.title}
+          onChange={onChange}
+          error={errors.title}
+          disabled={fetching}
+          placeholder="Enter task title"
+        />
 
-          <TaskDescriptionInput
-            value={form.description}
-            onChange={onChange}
-            error={errors.description}
-            disabled={fetching}
-          />
+        <TextArea
+          label="Description"
+          name="description"
+          value={form.description}
+          onChange={onChange}
+          error={errors.description}
+          disabled={fetching}
+          placeholder="Describe the task"
+        />
 
-          <TaskStatusSelector
-            value={form.status}
-            setValue={(val) => setForm({ ...form, status: val })}
-            disabled={fetching}
-          />
+        <StatusSelector
+          value={form.status}
+          onChange={(v) => setForm({ ...form, status: v })}
+          disabled={fetching}
+        />
 
-          <TaskFormActions
-            loading={loading}
-            isEdit={isEdit}
-            onCancel={() => dispatch(closeTaskModal())}
-          />
-        </form>
+        <div className="flex flex-col gap-3">
+          <Button loading={loading} 
+           loadingText={isEdit ? "Saving changes..." : "Creating task..."}
+           >
+            {isEdit ? "Save Changes" : "Create Task"}
+          </Button>
 
-        <Toast message={toast} clear={() => setToast("")} />
-      </div>
-    </div>
+          <Button variant="outline" onClick={() => dispatch(closeTaskModal())}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+
+      <Toast message={toast} clear={() => setToast("")} />
+    </Card>
   );
 }

@@ -10,7 +10,7 @@ import TaskModal from "../components/TaskModal";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { list, pagination, loading } = useSelector((s) => s.tasks);
+  const { list, pagination, fetchLoading ,loading } = useSelector((s) => s.tasks);
   const auth = useSelector((s) => s.auth);
   const [page, setPage] = useState(1);
   const [toast, setToast] = useState("");
@@ -40,77 +40,80 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Tasks</h1>
-        <div>
-          <span className="text-sm text-gray-500">
-            Role: {auth.user?.role || "guest"}
-          </span>
+    <>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-semibold">Tasks</h1>
+          <div>
+            <span className="text-sm text-gray-500">
+              Role: {auth.user?.role || "guest"}
+            </span>
+          </div>
         </div>
+
+        {fetchLoading ? (
+          <div className="grid gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="p-4 bg-white dark:bg-gray-800 rounded">
+                <Skeleton className="h-6 w-1/3 mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4">
+              {list.length === 0 ? (
+                <div className="text-center py-8">No tasks found.</div>
+              ) : (
+                list.map((task) => (
+                  <TaskCard
+                    key={task._id}
+                    task={task}
+                    onDelete={requestDelete}
+                    showDelete={auth.user?.role === "admin"}
+                  />
+                ))
+              )}
+            </div>
+
+            <Pagination pagination={pagination} onChange={(p) => setPage(p)} />
+          </>
+        )}
+
+        <Modal
+          isOpen={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          title="Confirm delete"
+        >
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to delete this task? This action cannot be
+              undone.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doDelete}
+                className="px-3 py-1 bg-red-600 text-white rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Toast message={toast} clear={() => setToast("")} />
+
+        <TaskModal />
       </div>
 
-      {loading ? (
-        <div className="grid gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="p-4 bg-white dark:bg-gray-800 rounded">
-              <Skeleton className="h-6 w-1/3 mb-2" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-4">
-            {list.length === 0 ? (
-              <div className="text-center py-8">No tasks found.</div>
-            ) : (
-              list.map((task) => (
-                <TaskCard
-                  key={task._id}
-                  task={task}
-                  onDelete={requestDelete}
-                  showDelete={auth.user?.role === "admin"}
-                />
-              ))
-            )}
-          </div>
-
-          <Pagination pagination={pagination} onChange={(p) => setPage(p)} />
-        </>
-      )}
-
-      <Modal
-        isOpen={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title="Confirm delete"
-      >
-        <div className="space-y-4">
-          <p>
-            Are you sure you want to delete this task? This action cannot be
-            undone.
-          </p>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setConfirmOpen(false)}
-              className="px-3 py-1 border rounded"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={doDelete}
-              className="px-3 py-1 bg-red-600 text-white rounded"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <Toast message={toast} clear={() => setToast("")} />
-
-      <TaskModal />
-    </div>
+    </>
   );
 }

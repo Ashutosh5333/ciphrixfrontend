@@ -75,6 +75,8 @@ const initialState = {
   pagination: null,
   currentTask: null,
   loading: false,
+  fetchLoading: false,
+  singleloading: false,
   error: null,
 };
 
@@ -89,41 +91,61 @@ const taskSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchTasks.pending, (state) => {
-        state.loading = true;
+        state.fetchLoading = true;
         state.error = null;
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
-        state.loading = false;
+        state.fetchLoading = false;
         state.list = action.payload.tasks || [];
         state.pagination = action.payload.pagination || null;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
-        state.loading = false;
+        state.fetchLoading = false;
         state.error = action.payload;
       })
 
       .addCase(fetchTaskById.pending, (state) => {
-        state.loading = true;
+        state.singleloading = true;
       })
       .addCase(fetchTaskById.fulfilled, (state, action) => {
-        state.loading = false;
+        state.singleloading = false;
         state.currentTask = action.payload;
       })
       .addCase(fetchTaskById.rejected, (state, action) => {
-        state.loading = false;
+        state.singleloading = false;
         state.error = action.payload;
       })
 
+      .addCase(createTask.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createTask.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(createTask.fulfilled, (state, action) => {
+        state.loading = false;
         state.list.unshift(action.payload);
       })
+
+      .addCase(updateTask.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateTask.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(updateTask.fulfilled, (state, action) => {
+        state.loading = false;
         state.list = state.list.map((t) =>
           t._id === action.payload._id ? action.payload : t
         );
         if (state.currentTask && state.currentTask._id === action.payload._id)
           state.currentTask = action.payload;
       })
+
       .addCase(deleteTask.fulfilled, (state, action) => {
         state.list = state.list.filter((t) => t._id !== action.payload);
       });
